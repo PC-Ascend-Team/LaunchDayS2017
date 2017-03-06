@@ -6,10 +6,23 @@ Phoenix College Spring 2017 Launch Code
 
 
 HEADER DEFINITION:
-example: "IMU Raw,IMU euler,Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS"
+example: "roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS"
 
-IMU Raw     =raw output from all IMU sensors (this will be redefined after implementing IMU to multiple positions)
-IMU euler   =euler angle output from IMU (will be updated in the future to multiple positions 3 axis)
+roll        =IMU rotational roll in degrees
+pitch       =IMU rotational pitch in degrees
+heading     =IMU rotational yaw in degrees
+accelx(g)      =acceleration in the x direction in G forces where 9.81m/s/s is 1G
+accely(g)      =acceleration in the y direction in G forces where 9.81m/s/s is 1G
+accelz(g)      =acceleration in the z direction in G forces where 9.81m/s/s is 1G
+magx(gaus)        =magnemometer axis x, outputting gauss units
+magy(gaus)        =magnemometer axis y, outputting gauss units
+magz(gaus)        =magnemometer axis z, outputting gauss units
+gyrox(dps)       =Gyro rotation in the x axis direction in degrees per second (dps) units
+gyroy(dps)       =Gyro rotation in the y axis direction in degrees per second (dps) units
+gyroz(dps)       =Gyro rotation in the z axis direction in degrees per second (dps) units
+pres(hPa)        =Pressure from the IMU board outputting hector pascals (hPa)
+clacAlt(m)  =altitude calculated by the 10DOF IMU using pressure, temperature, and local sea level. Outputs meters
+imuTemp(C)  =temperature data from the BMP180 on the 10DOF IMU, outputting in celcius.
 Temp0(F)    =TMP36 sensor data in fahrenheit for the TMP36 on the inside of the payload
 Temp1(F)    =TMP36 sensor data in fahrenheit for the TMP36 on the outside of the payload
 CO2         =output reserved for CO2 sensor. will be updated when implemented
@@ -22,6 +35,22 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//               Start of including headers
+////////////////////////////////////////////////////////////////////////////////
+
+
+#include <Wire.h>               //I2C class
+#include <Adafruit_Sensor.h>    //general sensor class
+#include <Adafruit_LSM303_U.h> //IMU (accel, mag)
+#include <Adafruit_BMP085_U.h> //IMU (BMP)
+#include <Adafruit_L3GD20_U.h> //IMU (Gryo)
+#include <Adafruit_Simple_AHRS.h> //for calculating the roll, pitchm and yaw
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                End of including headers
+////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -32,6 +61,8 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 //   Declare globals like pin numbers or constants/volatile variables here.
 ////////////////////////////////////////////////////////////////////////////////
 
+char delimiter = ',';   //used for seperating sensor values in the logging file
+
 int temp0Pin = A0;             //I'm writing A0 because you guys seem to use that. I use just 0. Both are valid.
 int temp1Pin = A1;
 
@@ -40,7 +71,18 @@ int geigerGeneralPin = 2;
 // int geigerBetaPin = ;
 // int geigerGammaPin = ;
 
-char delimiter = ',';   //used for seperating sensor values in the logging file
+
+//IMU globals
+// Create sensor instances.
+Adafruit_LSM303_Accel_Unified A (30301); //accelerometer
+Adafruit_LSM303_Mag_Unified   M (30302); //Magnetometer
+Adafruit_BMP085_Unified       B (18001); //Pressure/temp
+Adafruit_L3GD20_Unified       G  (20);   //Gyro
+// Create simple AHRS algorithm using the above sensors.
+Adafruit_Simple_AHRS          ahrs(&A, &M);
+float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
+//end of imu gloabls
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //                          End of global variables
@@ -50,6 +92,17 @@ char delimiter = ',';   //used for seperating sensor values in the logging file
 
 
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                 Start of interrupt function
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+//                 End of interrupt function
+////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -64,7 +117,15 @@ char delimiter = ',';   //used for seperating sensor values in the logging file
 void setup() {
     Serial.begin(9600);
 
-    Serial.println( F("IMU Raw,IMU euler,Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS") );  //the F() function stores the entire string literal only in flash memory, which saves a bit of program space. Better to add it now, then to have issues later and take a long time to diagnose and fix. This is preventative
+    //the F() function stores the entire string literal only in flash memory, which saves a bit of program space. Better to add it now, then to have issues later and take a long time to diagnose and fix. This is preventative
+    Serial.println( F("roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS") );
+
+    //IMU initialization
+    A.begin();//accel
+    M.begin();//magnemometer
+    B.begin();//barometer
+    G.begin();//gyro
+    //end of IMU initialization
 
 }//end of setup
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,25 +152,59 @@ void loop() {
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    //                          Start of IMU Raw
-    ////////////////////////////////////////////////////////////////////////////////
-    Serial.print("IMU Raw");
-    Serial.print(delimiter);
-    ////////////////////////////////////////////////////////////////////////////////
-    //                          End of IMU Raw
+    //                          Start of IMU Euler/Raw
     ////////////////////////////////////////////////////////////////////////////////
 
+    sensors_vec_t   orientation;
+    // Uses the AHRS function to get the current orientation (roll, pitch, heading/yaw) and prints data
+    if (ahrs.getOrientation(&orientation))
+    {
+        Serial.print(orientation.roll);
+        Serial.print(delimiter);
+        Serial.print(orientation.pitch);
+        Serial.print(delimiter);
+        Serial.print(orientation.heading);
+        Serial.print(delimiter);
+    }
 
+    //raw sensor datar
+    sensors_event_t A_event;
+    sensors_event_t M_event;
+    sensors_event_t G_event;
+    sensors_event_t B_event;
 
+    //gets a sensor event from each sensor
+    A.getEvent(&A_event);
+    M.getEvent(&M_event);
+    G.getEvent(&G_event);
 
+    //Display Raw Sensor Information: Accel, Mag, Gyro
+    Serial.print(A_event.acceleration.x); Serial.print(delimiter);
+    Serial.print(A_event.acceleration.y); Serial.print(delimiter);
+    Serial.print(A_event.acceleration.z); Serial.print(delimiter);
+    Serial.print(M_event.magnetic.x);     Serial.print(delimiter);
+    Serial.print(M_event.magnetic.y);     Serial.print(delimiter);
+    Serial.print(M_event.magnetic.z);     Serial.print(delimiter);
+    Serial.print(G_event.gyro.x);         Serial.print(delimiter);
+    Serial.print(G_event.gyro.y);         Serial.print(delimiter);
+    Serial.print(G_event.gyro.z);         Serial.print(delimiter);
 
+    sensors_event_t bmp_event;
+    B.getEvent(&B_event);
+    Serial.print(B_event.pressure);     Serial.print(delimiter); //prints pressure
+    if (B_event.pressure)
+    {
+        // Get temperature
+        float temperature;
+        B.getTemperature(&temperature);
+        //Convert atmospheric pressure, SLP and temp to altitude (get altitude)
+        Serial.print(B.pressureToAltitude(seaLevelPressure, B_event.pressure, temperature)); //prints altitude
+        Serial.println(temperature);
+        Serial.print(delimiter);
+
+    }
     ////////////////////////////////////////////////////////////////////////////////
-    //                          Start of IMU euler
-    ////////////////////////////////////////////////////////////////////////////////
-    Serial.print("IMU euler");
-    Serial.print(delimiter);
-    ////////////////////////////////////////////////////////////////////////////////
-    //                          End of IMU euler
+    //                          End of IMU Euler/Raw
     ////////////////////////////////////////////////////////////////////////////////
 
 
