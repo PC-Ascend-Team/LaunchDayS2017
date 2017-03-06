@@ -45,7 +45,7 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 #include <Adafruit_LSM303_U.h> //IMU (accel, mag)
 #include <Adafruit_BMP085_U.h> //IMU (BMP)
 #include <Adafruit_L3GD20_U.h> //IMU (Gryo)
-#include <Adafruit_Simple_AHRS.h> //for calculating the roll, pitchm and yaw
+#include <Adafruit_Simple_AHRS.h> //for calculating the roll, pitch and yaw
 
 
 ////////////////////////////////////////////////////////////////////////////////
