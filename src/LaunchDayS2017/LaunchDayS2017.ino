@@ -331,7 +331,7 @@ void loop() {
 
 //takes an integer pinNumber and returns the voltage from that analog pin
 float getVoltage(int pinNumber){
-    float voltage = analogRead (sensorPin);
+    float voltage = analogRead (pinNumber);
     return voltage*(5.0/1023.0);
 }
 
