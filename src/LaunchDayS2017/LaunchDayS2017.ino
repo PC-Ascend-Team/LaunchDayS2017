@@ -63,15 +63,6 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 
 char delimiter = ',';   //used for seperating sensor values in the logging file
 
-int temp0Pin = A0;             //I'm writing A0 because you guys seem to use that. I use just 0. Both are valid.
-int temp1Pin = A1;
-
-int geigerGeneralPin = 2;
-// int geigerAlphaPin = ;   //when these are bought and tested, add these pins
-// int geigerBetaPin = ;
-// int geigerGammaPin = ;
-
-
 //IMU globals
 // Create sensor instances.
 Adafruit_LSM303_Accel_Unified A (30301); //accelerometer
@@ -82,6 +73,22 @@ Adafruit_L3GD20_Unified       G  (20);   //Gyro
 Adafruit_Simple_AHRS          ahrs(&A, &M);
 float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
 //end of imu gloabls
+
+
+int temp0Pin = A0;             //I'm writing A0 because you guys seem to use that. I use just 0. Both are valid.
+int temp1Pin = A1;
+
+
+int geigerGeneralPin = 2;
+// int geigerAlphaPin = ;   //when these are bought and tested, add these pins
+// int geigerBetaPin = ;
+// int geigerGammaPin = ;
+
+
+//GPS globals
+//change the tag type to whatever GPS sentence type you want.
+char nmeaType[] = "$GPGGA,";//take the NMEA type, and sandwich it between a leading '$' and trailing comma ','
+bool gpsTagDetected = false;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,7 +275,7 @@ void loop() {
     ////////////////////////////////////////////////////////////////////////////////
     //                          Start of GPS
     ////////////////////////////////////////////////////////////////////////////////
-    Serial.print( F("GPS") );
+    checkUltimateGps();
     Serial.print(delimiter);
     ////////////////////////////////////////////////////////////////////////////////
     //                          End of GPS
@@ -281,7 +288,7 @@ void loop() {
     ////////////////////////////////////////////////////////////////////////////////
     //                          Start of millis(ms)
     ////////////////////////////////////////////////////////////////////////////////
-    Serial.print( F("millis(ms)") );
+    Serial.print( millis() );
     Serial.print(delimiter);
     ////////////////////////////////////////////////////////////////////////////////
     //                          End of millis(ms)
@@ -360,6 +367,62 @@ float voltageToTempF(float voltage){
 //simply input your pin number and output a float temperature!!!
 float getTempF(int pinNumber){
     return voltageToTempF( getVoltage(pinNumber) );
+}
+
+
+
+
+
+
+void checkUltimateGps(){
+    char gpsRaw[100];
+    bool gpsTagDetected = detectGPSTag(nmeaType, 5000);
+    if(gpsTagDetected){
+        readGPS(gpsRaw);
+        Serial.print(gpsRaw);
+    }
+    else {
+        Serial.print("gpsTimeoutError,,,,,,,,,,,,,");//the commas are there so a GPS hardware error doesn't screw our alignment.
+    }
+    // delay(200);//if you get extra unwanted lines/data, uncomment this.
+}
+
+
+
+//detects whatever tag is wanted.
+bool detectGPSTag(char* expectedAns, unsigned int timeout){
+    int charPosition = 0;    //position in the response string.
+    bool validAns = false;    //default value
+    unsigned long timeAtTransmit;    //used to store the current time in milliseconds when the arduino started waiting for a response from the mobile board
+    char responseString[100];    //char arracy to store the mobile board response
+    memset(responseString, '\0', 100);    //sets the last character to null making this a c-string
+    while(Serial.available() > 0) Serial.read();    //clear incoming serial port buffer, so the only thing in the buffer will be the shield response
+    timeAtTransmit = millis();    //millis returns how many milliseconds have passed since the program started. Basically current time.
+    do{
+        if(Serial.available() != 0){//only do something if there's serial data to read
+            responseString[charPosition] = Serial.read();    //serial read stored one byte (eight bits is one char), and store it into the current char position in the response string
+            charPosition++;    //move to next char position
+            if(strstr(responseString, expectedAns) != NULL){//this function returns null if expectedAns can't be found when searching through responseString
+                validAns = true;    //if the expectedAns was found inside responseString, then the answer is valid.
+            }
+        }
+    }//while answer is valid and while (current time - time when command was sent) are less than the timeout
+    while((validAns == false) && ((millis() - timeAtTransmit) < timeout));
+    return validAns;    //output whether or not the answer was valid.
+}
+
+
+
+//reads the GPS string after the proper tag is detected.
+void readGPS(char* gpsString){
+    int gpsChar = 0;    //character position 0
+    do{
+        while(Serial.available() == 0);    //wait for incoming gps data
+        gpsString[gpsChar] = Serial.read();    //store char into gps string
+        gpsChar++;    //move to next position
+    }
+    while(gpsString[gpsChar - 1] != '\r');    //this board has a "cairraige return" and "line feed" and the end of each transmission. this "\r" is the cairraige return. This loops until that is seen and then the NULL character "\0" is set at the end to be a valid c-string that can be used with serial print.
+    gpsString[gpsChar] = '\0';
 }
 
 
