@@ -89,6 +89,7 @@ int geigerGeneralPin = 2;
 //change the tag type to whatever GPS sentence type you want.
 char nmeaType[] = "$GPGGA,";//take the NMEA type, and sandwich it between a leading '$' and trailing comma ','
 bool gpsTagDetected = false;
+int gpsTimeout = 5000; //in milliseconds
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -376,7 +377,7 @@ float getTempF(int pinNumber){
 
 void checkUltimateGps(){
     char gpsRaw[100];
-    bool gpsTagDetected = detectGPSTag(nmeaType, 5000);
+    bool gpsTagDetected = detectGPSTag(nmeaType, gpsTimeout);
     if(gpsTagDetected){
         readGPS(gpsRaw);
         Serial.print(gpsRaw);
