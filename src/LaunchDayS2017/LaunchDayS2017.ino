@@ -9,30 +9,30 @@ Global variables use 637 bytes (31%) of dynamic memory, leaving 1411 bytes for l
 
 
 HEADER DEFINITION:
-example: "roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS"
+example: "roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(#/5sec),GPS,millis(ms),APRS"
 
-roll        =IMU rotational roll in degrees
-pitch       =IMU rotational pitch in degrees
-heading     =IMU rotational yaw in degrees
-accelx(g)      =acceleration in the x direction in G forces where 9.81m/s/s is 1G
-accely(g)      =acceleration in the y direction in G forces where 9.81m/s/s is 1G
-accelz(g)      =acceleration in the z direction in G forces where 9.81m/s/s is 1G
-magx(gaus)        =magnemometer axis x, outputting gauss units
-magy(gaus)        =magnemometer axis y, outputting gauss units
-magz(gaus)        =magnemometer axis z, outputting gauss units
-gyrox(dps)       =Gyro rotation in the x axis direction in degrees per second (dps) units
-gyroy(dps)       =Gyro rotation in the y axis direction in degrees per second (dps) units
-gyroz(dps)       =Gyro rotation in the z axis direction in degrees per second (dps) units
-pres(hPa)        =Pressure from the IMU board outputting hector pascals (hPa)
-clacAlt(m)  =altitude calculated by the 10DOF IMU using pressure, temperature, and local sea level. Outputs meters
-imuTemp(C)  =temperature data from the BMP180 on the 10DOF IMU, outputting in celcius.
-Temp0(F)    =TMP36 sensor data in fahrenheit for the TMP36 on the inside of the payload
-Temp1(F)    =TMP36 sensor data in fahrenheit for the TMP36 on the outside of the payload
-CO2         =output reserved for CO2 sensor. will be updated when implemented
-Geiger(cpm) =general geiger counter in counts per minute. Will be updated when we implement more geiger counters
-GPS         =gps output, will be updated with more placements later. Currently planning to capture GPGGA type NMEA GPS sentences.
-millis(ms)  =the duration that the current program has been running in milliseconds. If we have no GPS fix, we have no sense of time. This uses the arduino local clock to tell how much time has passed, and as indication of system failures
-APRS        =placeholder for data from APRS. (this should just be a transmitter, but we should also be able to get location from it as well... maybe...)
+roll           = IMU rotational roll in degrees
+pitch          = IMU rotational pitch in degrees
+heading        = IMU rotational yaw in degrees
+accelx(g)      = acceleration in the x direction in G forces where 9.81m/s/s is 1G
+accely(g)      = acceleration in the y direction in G forces where 9.81m/s/s is 1G
+accelz(g)      = acceleration in the z direction in G forces where 9.81m/s/s is 1G
+magx(gaus)     = magnemometer axis x, outputting gauss units
+magy(gaus)     = magnemometer axis y, outputting gauss units
+magz(gaus)     = magnemometer axis z, outputting gauss units
+gyrox(dps)     = Gyro rotation in the x axis direction in degrees per second (dps) units
+gyroy(dps)     = Gyro rotation in the y axis direction in degrees per second (dps) units
+gyroz(dps)     = Gyro rotation in the z axis direction in degrees per second (dps) units
+pres(hPa)      = Pressure from the IMU board outputting hector pascals (hPa)
+clacAlt(m)     = altitude calculated by the 10DOF IMU using pressure, temperature, and local sea level. Outputs meters
+imuTemp(C)     = temperature data from the BMP180 on the 10DOF IMU, outputting in celcius.
+Temp0(F)       = TMP36 sensor data in fahrenheit for the TMP36 on the inside of the payload
+Temp1(F)       = TMP36 sensor data in fahrenheit for the TMP36 on the outside of the payload
+CO2            = output reserved for CO2 sensor. will be updated when implemented
+Geiger(#/5sec) = the raw particle count from a alpha beta gamma detector during a 5 second window
+GPS            = gps output, will be updated with more placements later. Currently planning to capture GPGGA type NMEA GPS sentences.
+millis(ms)     = the duration that the current program has been running in milliseconds. If we have no GPS fix, we have no sense of time. This uses the arduino local clock to tell how much time has passed, and as indication of system failures
+APRS           = placeholder for data from APRS. (this should just be a transmitter, but we should also be able to get location from it as well... maybe...)
 
 */
 
@@ -116,7 +116,7 @@ void setup() {
     Serial.begin(9600);
 
     //the F() function stores the entire string literal only in flash memory, which saves a bit of program space. Better to add it now, then to have issues later and take a long time to diagnose and fix. This is preventative
-    Serial.println( F("roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS") );
+    Serial.println( F("roll,pitch,heading,accelx(g),accely(g),accelz(g),magx(gaus),magy(gaus),magz(gaus),gyrox(dps),gyroy(dps),gyroz(dps),pres(hPa),imuAlt(m),imuTemp(F),Temp0(F),Temp1(F),CO2,Geiger(#/5sec),GPS,millis(ms),APRS") );
 
     //IMU initialization
     A.begin();//accel
