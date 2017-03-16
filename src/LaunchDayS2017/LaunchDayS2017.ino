@@ -36,7 +36,7 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 int temp0Pin = A0;             //I'm writing A0 because you guys seem to use that. I use just 0. Both are valid.
 int temp1Pin = A1;
 
-const unsigned int geigerGeneralPin = 2;
+const unsigned int geigerGeneralPin = 2; //assigns digital input pin 2 to the geiger code
 // int geigerAlphaPin = ;   //when these are bought and tested, add these pins
 // int geigerBetaPin = ;
 // int geigerGammaPin = ;
@@ -180,15 +180,13 @@ void loop() {
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    //                          Start of Geiger(cpm)
+    //                          Start of Geiger(counts per 5 seconds)
     ////////////////////////////////////////////////////////////////////////////////
-    unsigned long particleCount1 = gc_counts;
-    unsigned long time1 = millis();
-    delay (5000);
-    unsigned long particleCount2 = gc_counts;
-    unsigned long time2 = millis();
-    unsigned long deltaCount = particleCount2 - particleCount1;
-    Serial.println(deltaCount);
+    unsigned long particleCount1 = gc_counts;//taking initial radiation sample
+    delay (5000);//waiting 5 seconds
+    unsigned long particleCount2 = gc_counts;//taking second radiation sample
+    unsigned long deltaCount = particleCount2 - particleCount1;//since our radiation pulses area a running count we need to take the difference of two samples given a known time lapse to deterimine the counts per 5 seconds.
+    Serial.print(deltaCount);//prints counts over a 5 second span and prints them/sends them to the datalogger
     Serial.print(delimiter);// POST Geiger Counter (GC) test code
 
 
