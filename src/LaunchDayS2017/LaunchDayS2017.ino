@@ -3,7 +3,7 @@ Phoenix College Spring 2017 Launch Code
 
 
 
-adams Text
+
 
 
 HEADER DEFINITION:
@@ -36,11 +36,23 @@ APRS        =placeholder for data from APRS. (this should just be a transmitter,
 int temp0Pin = A0;             //I'm writing A0 because you guys seem to use that. I use just 0. Both are valid.
 int temp1Pin = A1;
 
-int geigerGeneralPin = 2;
+const unsigned int geigerGeneralPin = 2;
 // int geigerAlphaPin = ;   //when these are bought and tested, add these pins
 // int geigerBetaPin = ;
 // int geigerGammaPin = ;
-
+// Global variables
+   
+// Declared volatile because two threads of execution are using it.
+// Value is initially set to zero because there are no counts.   
+   volatile unsigned int gc_counts = 0;
+   
+// Function for interrupt 
+   // gc_counts is increased by 1 
+   // every time function called.
+   // void loop will reset when written memory 
+   void gc_interrupt(){ 
+     gc_counts++;
+   }   
 char delimiter = ',';   //used for seperating sensor values in the logging file
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,6 +79,15 @@ void setup() {
 
     Serial.println( F("IMU Raw,IMU euler,Temp0(F),Temp1(F),CO2,Geiger(cpm),GPS,millis(ms),APRS") );  //the F() function stores the entire string literal only in flash memory, which saves a bit of program space. Better to add it now, then to have issues later and take a long time to diagnose and fix. This is preventative
 
+// Sets up geigerGeneralPin as input
+   pinMode(geigerGeneralPin, INPUT);
+  
+// Sets up the interrupt to trigger for a rising edge
+// geigerGeneralPin (2) corresponds to the 5th interrupt gc_intnumber  
+// gc_interrupt is the function we want to call once we detect an interrupt
+   attachInterrupt(digitalPinToInterrupt(geigerGeneralPin), gc_interrupt, RISING);
+   
+ 
 }//end of setup
 ////////////////////////////////////////////////////////////////////////////////
 //                          End of setup
@@ -161,8 +182,23 @@ void loop() {
     ////////////////////////////////////////////////////////////////////////////////
     //                          Start of Geiger(cpm)
     ////////////////////////////////////////////////////////////////////////////////
-    Serial.print("Geiger(cpm)");
-    Serial.print(delimiter);
+    unsigned long particleCount1 = gc_counts;
+    unsigned long time1 = millis();
+    delay (5000);
+    unsigned long particleCount2 = gc_counts;
+    unsigned long time2 = millis();
+    unsigned long deltaCount = particleCount2 - particleCount1;
+    Serial.println(deltaCount);
+    Serial.print(delimiter);// POST Geiger Counter (GC) test code
+
+
+
+
+
+
+  
+
+
     ////////////////////////////////////////////////////////////////////////////////
     //                          End of Geiger(cpm)
     ////////////////////////////////////////////////////////////////////////////////
