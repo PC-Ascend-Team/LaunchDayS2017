@@ -2,6 +2,9 @@
 Phoenix College Spring 2017 Launch Code
 
 
+Last knwon compilation stats : (3/16/2017) last added geiger counter 
+Sketch uses 15336 bytes (47%) of program storage space. Maximum is 32256 bytes.
+Global variables use 637 bytes (31%) of dynamic memory, leaving 1411 bytes for local variables. Maximum is 2048 bytes.
 
 
 
