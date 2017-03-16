@@ -40,19 +40,12 @@ const unsigned int geigerGeneralPin = 2; //assigns digital input pin 2 to the ge
 // int geigerAlphaPin = ;   //when these are bought and tested, add these pins
 // int geigerBetaPin = ;
 // int geigerGammaPin = ;
-// Global variables
-   
+
 // Declared volatile because two threads of execution are using it.
-// Value is initially set to zero because there are no counts.   
-   volatile unsigned int gc_counts = 0;
-   
-// Function for interrupt 
-   // gc_counts is increased by 1 
-   // every time function called.
-   // void loop will reset when written memory 
-   void gc_interrupt(){ 
-     gc_counts++;
-   }   
+// Value is initially set to zero because there are no counts.
+volatile unsigned int gc_counts = 0;
+
+
 char delimiter = ',';   //used for seperating sensor values in the logging file
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,13 +74,13 @@ void setup() {
 
 // Sets up geigerGeneralPin as input
    pinMode(geigerGeneralPin, INPUT);
-  
+
 // Sets up the interrupt to trigger for a rising edge
-// geigerGeneralPin (2) corresponds to the 5th interrupt gc_intnumber  
+// geigerGeneralPin (2) corresponds to the 5th interrupt gc_intnumber
 // gc_interrupt is the function we want to call once we detect an interrupt
    attachInterrupt(digitalPinToInterrupt(geigerGeneralPin), gc_interrupt, RISING);
-   
- 
+
+
 }//end of setup
 ////////////////////////////////////////////////////////////////////////////////
 //                          End of setup
@@ -188,15 +181,6 @@ void loop() {
     unsigned long deltaCount = particleCount2 - particleCount1;//since our radiation pulses area a running count we need to take the difference of two samples given a known time lapse to deterimine the counts per 5 seconds.
     Serial.print(deltaCount);//prints counts over a 5 second span and prints them/sends them to the datalogger
     Serial.print(delimiter);// POST Geiger Counter (GC) test code
-
-
-
-
-
-
-  
-
-
     ////////////////////////////////////////////////////////////////////////////////
     //                          End of Geiger(cpm)
     ////////////////////////////////////////////////////////////////////////////////
@@ -302,6 +286,14 @@ float getTempF(int pinNumber){
     return voltageToTempF( getVoltage(pinNumber) );
 }
 
+
+// Function for interrupt
+// gc_counts is increased by 1
+// every time function called.
+// void loop will reset when written memory
+void gc_interrupt(){
+    gc_counts++;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //                     End of function definitions
