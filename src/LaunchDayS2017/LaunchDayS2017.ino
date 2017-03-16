@@ -206,7 +206,7 @@ void loop() {
         B.getTemperature(&temperature);
         //Convert atmospheric pressure, SLP and temp to altitude (get altitude)
         Serial.print(B.pressureToAltitude(seaLevelPressure, B_event.pressure, temperature)); //prints altitude
-        Serial.println(temperature);
+        Serial.print(temperature);
         Serial.print(delimiter);
 
     }
