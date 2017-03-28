@@ -49,7 +49,8 @@ APRS           = placeholder for data from APRS. (this should just be a transmit
 #include <Adafruit_BMP085_U.h> //IMU (BMP)
 #include <Adafruit_L3GD20_U.h> //IMU (Gryo)
 #include <Adafruit_Simple_AHRS.h> //for calculating the roll, pitch and yaw
-
+#include <SoftwareSerial.h> //For CO2 sensor
+#include <NDIR_SoftwareSerial.h> //For CO2 sensor
 
 ////////////////////////////////////////////////////////////////////////////////
 //                End of including headers
@@ -97,6 +98,8 @@ char nmeaType[] = "$GPGGA,";//take the NMEA type, and sandwich it between a lead
 bool gpsTagDetected = false;
 int gpsTimeout = 5000; //in milliseconds
 
+// C02 globals
+NDIR_SoftwareSerial mySensor(4, 5);//(rx, tx)
 
 ////////////////////////////////////////////////////////////////////////////////
 //                          End of global variables
@@ -131,7 +134,7 @@ void setup() {
 // Sets up the interrupt to trigger for a rising edge
 // geigerGeneralPin (2) corresponds to the 5th interrupt gc_intnumber
 // gc_interrupt is the function we want to call once we detect an interrupt
-   attachInterrupt(digitalPinToInterrupt(geigerGeneralPin), gc_interrupt, RISING);
+   attachInterrupt(digitalPinToInterrupt(geigerGeneralPin), gc_interrupt, RISING); // had to change this to: attachInterrupt(0, gc_interrupt, RISING) 
 
 
 }//end of setup
@@ -206,6 +209,7 @@ void loop() {
         B.getTemperature(&temperature);
         //Convert atmospheric pressure, SLP and temp to altitude (get altitude)
         Serial.print(B.pressureToAltitude(seaLevelPressure, B_event.pressure, temperature)); //prints altitude
+        Serial.print(delimiter); //added this
         Serial.print(temperature);
         Serial.print(delimiter);
 
@@ -249,8 +253,10 @@ void loop() {
     ////////////////////////////////////////////////////////////////////////////////
     //                          Start of CO2
     ////////////////////////////////////////////////////////////////////////////////
-    Serial.print( F("CO2") );
+    if (mySensor.measure()) {
+    Serial.print(mySensor.ppm);
     Serial.print(delimiter);
+    }
     ////////////////////////////////////////////////////////////////////////////////
     //                          End of CO2
     ////////////////////////////////////////////////////////////////////////////////
